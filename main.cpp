@@ -1,6 +1,3 @@
-#include <iostream>
-#include <string>
-#include <vector>
 #include <bits/stdc++.h>
 using namespace std;
 class Person
@@ -107,6 +104,11 @@ public:
     {
         Staff::displayDetails();
         std::cout << ", Specialty: " << getSpecialty();
+        cout << "Patients of " << name << " :";
+        for (auto patient : patients)
+        {
+            cout << patient->getName() << endl;
+        }
     }
 
     virtual std::string getSpecialty() const
@@ -176,7 +178,6 @@ public:
         {
             observer->update(message);
         }
-        cout << message << " " << endl;
     }
     void display()
     {
@@ -187,7 +188,7 @@ public:
         cout << endl;
     }
 };
-class Hospital : public Subject
+class Hospital
 {
 private:
     std::vector<Person *> staffMembers;
@@ -342,7 +343,7 @@ public:
         {
             doctor->addPatient(newPatient);
             std::cout << "Patient " << patientName << " assigned to Doctor " << doctorName << std::endl;
-            hospital.notifyObservers("New patient added: " + patientName);
+            notifyObservers("New patient added: " + patientName);
         }
         else
         {
@@ -394,7 +395,7 @@ public:
     {
         if (!instance)
         {
-            instance = new Admin("Sampreet",25,"Admin",25000,"morning");
+            instance = new Admin("Sampreet", 25, "Admin", 25000, "morning");
         }
         return instance;
     }
@@ -405,7 +406,6 @@ public:
         if (newStaffMember)
         {
             hospital.addStaffMember(newStaffMember);
-            std::cout << "New " << role << " named " << name << " added to the hospital." << std::endl;
         }
         else
         {
@@ -489,6 +489,9 @@ int main()
 {
     Hospital hospital;
     Admin *admin = Admin::getinstance();
+    admin->addStaffMember(hospital, "omk", 25, "Receptionist", 25000, "morning");
+    Receptionist *receptionist = dynamic_cast<Receptionist *>(hospital.getStaffMembersByName("omk"));
+    receptionist->addObserver(admin);
     string name, name1;
     double temperature;
     int heartRate;
@@ -510,7 +513,7 @@ int main()
         cout << "10. Prescribe medicine to a patient from a doctor\n";
         cout << "11. Record vital signs of a patient\n";
         cout << "12. Notify admin from receptionist" << endl;
-        cout << "13.Search patient by id" << endl;
+        cout << "13. Search patient by id" << endl;
         cout << "14. Discharge Patient" << endl;
         cout << "15. Exit\n";
         cout << "Enter your choice (1-14): ";
@@ -523,7 +526,6 @@ int main()
             string name, role, shifts;
             int age;
             double salary;
-
             cout << "Enter staff member name: ";
             cin.ignore();
             getline(cin, name);
@@ -539,6 +541,7 @@ int main()
             getline(cin, shifts);
 
             admin->addStaffMember(hospital, name, age, role, salary, shifts);
+            receptionist->notifyObservers("New staff member joined!!");
             break;
         }
         case 2:
@@ -584,21 +587,33 @@ int main()
             break;
         case 4:
         {
-            string name, condition;
-            int age, patientId;
+            try
+            {
+                Receptionist *receptionist = dynamic_cast<Receptionist *>(hospital.getStaffMembersByName("om"));
+                if (!receptionist)
+                    throw StaffNotFoundException();
+                else
+                {
+                    string name, condition;
+                    int age, patientId;
 
-            cout << "Enter patient name: ";
-            cin.ignore();
-            getline(cin, name);
-            cout << "Enter patient age: ";
-            cin >> age;
-            cout << "Enter patient ID: ";
-            cin >> patientId;
-            cout << "Enter patient condition: ";
-            cin.ignore();
-            getline(cin, condition);
-
-            hospital.addPatient(new Patient(name, age, patientId, condition));
+                    cout << "Enter patient name: ";
+                    cin.ignore();
+                    getline(cin, name);
+                    cout << "Enter patient age: ";
+                    cin >> age;
+                    cout << "Enter patient ID: ";
+                    cin >> patientId;
+                    cout << "Enter patient condition: ";
+                    cin.ignore();
+                    getline(cin, condition);
+                    receptionist->addPatientToDoctor(hospital, "bye", 20, 1, "unhealthy", "bb");
+                }
+            }
+            catch (const StaffNotFoundException &e)
+            {
+                std::cerr << "Exception caught: " << e.what() << std::endl;
+            }
             break;
         }
         case 5:
@@ -619,6 +634,7 @@ int main()
             getline(cin, shifts);
 
             admin->updateStaffMember(hospital, name, age, salary, shifts);
+            receptionist->notifyObservers("Updated details!!");
             break;
         }
         case 6:
@@ -713,12 +729,10 @@ int main()
         case 12:
             try
             {
-                Receptionist *receptionist = dynamic_cast<Receptionist *>(hospital.getStaffMembersByName("Mike Johnson"));
                 if (!receptionist)
                     throw StaffNotFoundException();
                 else
                 {
-                    receptionist->addObserver(admin);
                     receptionist->notifyObservers("hello");
                 }
             }
